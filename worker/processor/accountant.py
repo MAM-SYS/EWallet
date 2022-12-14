@@ -49,3 +49,9 @@ async def cancel_scheduled_transfer(transfer_number: str):
                                                                                                 canceled_at=datetime.now()))
 
     await session.commit()
+
+async def get_wallet_balance(client_id: str):
+    logging.info("Fetching client's wallet with id %s", client_id)
+    async with get_session() as session:
+        wallet: Wallet = (await session.execute(select(Wallet).where(Wallet.client_id == client_id))).one()
+        return await wallet[0].balance

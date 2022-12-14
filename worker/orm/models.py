@@ -8,7 +8,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import select
 from orm import get_session
 from decimal import Decimal
-from dto_pack import TransferType
+from dto_pack import TransferType, TransferStatus
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -156,6 +156,27 @@ class Wallet(Base):
 
     client = relationship('BanksClient')
 
+    @hybrid_property
+    async def balance(self) -> Decimal:
+        async with get_session() as session:
+            credit = (await session.execute(
+                select(
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                [(Transfer.type == TransferType.Deposit.value, Transaction.amount),
+                                (Transfer.type == TransferType.Withdraw.value, -Transaction.amount)]
+                            )
+                        ), 0
+                    )
+                )
+                .join(Transfer)
+                .where(Transaction.wallet_id == self.uuid,
+                       Transfer.status == TransferStatus.Succeed.value)
+            )
+                      ).scalar()
+        return credit
+
 
 class AuthGroupPermission(Base):
     __tablename__ = 'auth_group_permissions'
@@ -195,6 +216,7 @@ class Transaction(Base):
 
     wallet = relationship('Wallet')
 
+    transfer = relationship('Transfer', uselist=False)
 
 class Transfer(Base):
     __tablename__ = 'transfers'

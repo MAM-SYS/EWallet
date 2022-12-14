@@ -23,7 +23,7 @@ class Wallet(models.Model):
 
     @property
     def balance(self):
-        if balance := Transaction.objects.filter(wallet=self).aggregate(
+        if balance := Transaction.objects.filter(wallet=self, transfer__status=TransferStatus.Succeed.value).aggregate(
                 balance=Sum(
                     Coalesce(
                         Case(

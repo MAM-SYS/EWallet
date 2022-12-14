@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Dict, Any
 
 from banks.models import Client
 from dto_pack import TransferType, TransferTransitionTrigger
 from rest_framework import serializers
 from wallets.exceptions import ClientNotFoundException, WalletConflictException
-from wallets.models import Wallet, Transfer
+from wallets.models import Wallet, Transfer, Transaction
 
 
 class WalletSerializer(serializers.ModelSerializer):
@@ -45,6 +46,7 @@ class CreateTransferSerializer(serializers.ModelSerializer):
             validated_data.pop("scheduled_at")
 
         validated_data["client"] = client
+        validated_data["finished_at"] = datetime.now()
 
         instance: Transfer = super().create(validated_data)
 
